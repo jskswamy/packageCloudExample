@@ -1,0 +1,61 @@
+group 'com.example.packageCloudExample'
+
+apply plugin: 'java'
+apply plugin: 'jacoco'
+apply plugin: 'maven'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+ repositories {
+     mavenCentral()
+ }
+
+jacoco {
+    toolVersion = "0.7.6.201602180812"
+    reportsDir = file("$buildDir/customJacocoReportDir")
+}
+
+ext {
+    releaseVersion = System.getenv('release_version')
+}
+
+ configurations {
+     deployerJars
+ }
+
+jacocoTestReport {
+    reports {
+        xml.enabled false
+        csv.enabled false
+        html.destination "${buildDir}/jacocoHtml"
+    }
+}
+
+test {
+    afterTest { desc, result ->
+        println "Executing test ${desc.name} [${desc.className}] with result: ${result.resultType}"
+    }
+
+    jacoco {
+        append = false
+        destinationFile = file("$buildDir/jacoco/jacocoTest.exec")
+        classDumpFile = file("$buildDir/jacoco/classpathdumps")
+    }
+}
+
+dependencies {
+    compile group: 'org.apache.solr', name: 'solr-solrj', version: '4.9.1'
+    compile group: 'org.apache.lucene', name: 'lucene-core', version: '4.9.1'
+    testCompile group: 'org.mockito', name: 'mockito-all', version: '1.10.19'
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+     deployerJars "io.packagecloud.maven.wagon:maven-packagecloud-wagon:0.0.4"
+}
+
+ uploadArchives {
+     repositories.mavenDeployer {
+         repository(url: "https://packagecloud.io/reponame/java/maven2") {
+             authentication(password: mavenPassword)
+         }
+     }
+ }
